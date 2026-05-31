@@ -32,6 +32,13 @@ jobs:
           M3U_URL: ${{ secrets.M3U_URL }}
         run: python update_epg.py
 
+      - name: Generate direct-URL Pluto playlist
+        run: |
+          curl -s https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/main/playlists/plutotv_us.m3u | \
+          sed -E 's#https://jmp2\.uk/plu-([a-f0-9]+)\.m3u8#https://service-stitcher.clusters.pluto.tv/v1/stitch/embed/hls/channel/\1/master.m3u8?deviceId=channel\&deviceModel=web\&deviceVersion=1.0\&appVersion=1.0\&deviceType=rokuChannel\&deviceMake=rokuChannel\&deviceDNT=1\&advertisingId=channel\&embedPartner=rokuChannel\&appName=rokuchannel\&is_lat=1\&bmodel=bm1\&content=channel\&platform=web\&content_type=livefeed#g' \
+          > pluto_us_direct.m3u
+          echo "Generated playlist with $(grep -c EXTINF pluto_us_direct.m3u) channels"
+
       - name: Commit and Force Push
         run: |
           git config --local user.email "action@github.com"
@@ -41,7 +48,7 @@ jobs:
           date -u > last_run.txt
           
           # Add the epg and the heartbeat file
-          git add epgs/*.gz last_run.txt
+          git add epgs/*.gz last_run.txt pluto_us_direct.m3u
           
           # Commit using amend to keep the repo history from growing
           git commit --amend -m "Fresh EPG Update: $(date -u)" || git commit -m "Fresh EPG Update: $(date -u)"
